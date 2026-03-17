@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               BigInt           @id @default(autoincrement())
+  name             String           @db.VarChar(100)
+  email            String           @unique @db.VarChar(100)
+  password         String           @db.VarChar(255)
+  status           UserStatus       @default(active)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  merchantUsers    MerchantUser[]
+  cashierSales     Sale[]           @relation("CashierSales")
+  purchaseRecords  Purchase[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Merchant {
+  id            BigInt           @id @default(autoincrement())
+  name          String           @db.VarChar(100)
+  address       String?          @db.VarChar(255)
+  phone         String?          @db.VarChar(50)
+  status        MerchantStatus   @default(active)
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  merchantUsers MerchantUser[]
+  categories    Category[]
+  units         Unit[]
+  products      Product[]
+  stocks        Stock[]
+  sales         Sale[]
+  purchases     Purchase[]
+  auditLogs     AuditLog[]
+
+  @@map("merchants")
+}
+
+model Role {
+  id            BigInt           @id @default(autoincrement())
+  name          String           @unique @db.VarChar(50)
+  description   String?          @db.Text
+
+  merchantUsers MerchantUser[]
+
+  @@map("roles")
+}
+
+model MerchantUser {
+  id          BigInt           @id @default(autoincrement())
+  merchantId  BigInt           @map("merchant_id")
+  userId      BigInt           @map("user_id")
+  roleId      BigInt           @map("role_id")
+  status      MembershipStatus @default(active)
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  merchant    Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, userId])
+  @@index([userId])
+  @@index([merchantId])
+  @@map("merchant_users")
+}
+
+model Category {
+  id          BigInt    @id @default(autoincrement())
+  merchantId  BigInt    @map("merchant_id")
+  name        String    @db.VarChar(100)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@unique([merchantId, name])
+  @@index([merchantId])
+  @@map("categories")
+}
+
+model Unit {
+  id          BigInt    @id @default(autoincrement())
+  merchantId  BigInt    @map("merchant_id")
+  name        String    @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@unique([merchantId, name])
+  @@index([merchantId])
+  @@map("units")
+}
+
+model Product {
+  id            BigInt         @id @default(autoincrement())
+  merchantId    BigInt         @map("merchant_id")
+  categoryId    BigInt?        @map("category_id")
+  unitId        BigInt?        @map("unit_id")
+  name          String         @db.VarChar(150)
+  sku           String?        @db.VarChar(100)
+  price         Decimal        @db.Decimal(15, 2)
+  status        ProductStatus  @default(active)
+  reorderPoint  Int            @default(5) @map("reorder_point")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit          Unit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  stock         Stock?
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+
+  @@unique([merchantId, sku])
+  @@index([merchantId])
+  @@index([categoryId])
+  @@index([unitId])
+  @@map("products")
+}
+
+model Stock {
+  id          BigInt    @id @default(autoincrement())
+  merchantId  BigInt    @map("merchant_id")
+  productId   BigInt    @unique @map("product_id")
+  quantity    Int       @default(0)
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@map("stocks")
+}
+
+model Sale {
+  id             BigInt    @id @default(autoincrement())
+  merchantId     BigInt    @map("merchant_id")
+  cashierUserId  BigInt?   @map("cashier_user_id")
+  invoiceNumber  String    @db.VarChar(100) @map("invoice_number")
+  subtotal       Decimal   @db.Decimal(15, 2)
+  discountAmount Decimal   @default(0) @db.Decimal(15, 2) @map("discount_amount")
+  totalAmount    Decimal   @db.Decimal(15, 2) @map("total_amount")
+  paymentMethod  String?   @db.VarChar(50) @map("payment_method")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  merchant       Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  cashier        User?     @relation("CashierSales", fields: [cashierUserId], references: [id], onDelete: SetNull)
+  items          SaleItem[]
+
+  @@unique([merchantId, invoiceNumber])
+  @@index([merchantId])
+  @@map("sales")
+}
+
+model SaleItem {
+  id         BigInt    @id @default(autoincrement())
+  saleId     BigInt    @map("sale_id")
+  productId  BigInt    @map("product_id")
+  quantity   Int
+  price      Decimal   @db.Decimal(15, 2)
+  subtotal   Decimal   @db.Decimal(15, 2)
+
+  sale       Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sales_items")
+}
+
+model Purchase {
+  id            BigInt    @id @default(autoincrement())
+  merchantId    BigInt    @map("merchant_id")
+  userId        BigInt?   @map("user_id")
+  invoiceNumber String?   @db.VarChar(100) @map("invoice_number")
+  totalAmount   Decimal   @db.Decimal(15, 2) @map("total_amount")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  merchant      Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items         PurchaseItem[]
+
+  @@index([merchantId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          BigInt    @id @default(autoincrement())
+  purchaseId  BigInt    @map("purchase_id")
+  productId   BigInt    @map("product_id")
+  quantity    Int
+  cost        Decimal   @db.Decimal(15, 2)
+  subtotal    Decimal   @db.Decimal(15, 2)
+
+  purchase    Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+model AuditLog {
+  id          BigInt    @id @default(autoincrement())
+  merchantId  BigInt    @map("merchant_id")
+  userId      BigInt?   @map("user_id")
+  action      String    @db.VarChar(100)
+  entity      String?   @db.VarChar(100)
+  entityId    BigInt?   @map("entity_id")
+  description String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum MerchantStatus {
+  active
+  inactive
+}
+
+enum MembershipStatus {
+  active
+  inactive
+}
+
+enum ProductStatus {
+  active
+  inactive
+}

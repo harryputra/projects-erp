@@ -17,8 +17,11 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="text-center text-red-500">
-        Token reset tidak valid atau tidak ditemukan.
+      <div className="text-center">
+        <p className="text-red-500 mb-4">Token reset tidak valid atau tidak ditemukan.</p>
+        <Link href="/signin" className="text-sm font-medium text-brand-500 hover:underline">
+          Kembali ke Sign In
+        </Link>
       </div>
     );
   }
@@ -34,9 +37,7 @@ function ResetPasswordForm() {
         newPassword: password,
       });
       setSuccess(res.message);
-      setTimeout(() => {
-        router.push("/login");
-      }, 3000);
+      setTimeout(() => { router.push("/signin"); }, 3000);
     } catch (err: any) {
       setError(err.message || "Gagal mereset password");
     } finally {
@@ -46,9 +47,9 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="text-center">
-        <p className="mb-4 text-green-600 dark:text-green-400">{success}</p>
-        <p className="text-sm text-gray-500">Mengarahkan ke halaman login...</p>
+      <div className="text-center space-y-4">
+        <p className="text-lg font-medium text-gray-800 dark:text-white">Password Berhasil Diubah!</p>
+        <p className="text-sm text-gray-500">Mengarahkan Anda ke halaman Sign In...</p>
       </div>
     );
   }
@@ -87,18 +88,25 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
+    // PEMBUNGKUS LUAR (SAMA PERSIS DENGAN FORGOT PASSWORD)
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 dark:bg-gray-900">
+      {/* KOTAK PUTIH (SAMA PERSIS DENGAN FORGOT PASSWORD) */}
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/5">
-        <h1 className="mb-6 text-2xl font-semibold text-gray-800 dark:text-white/90">
+        
+        <h1 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
           Reset Password
         </h1>
-        {/* Suspense diperlukan di Next.js saat menggunakan useSearchParams() */}
-        <Suspense fallback={<p>Loading...</p>}>
+        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+          Silakan masukkan password baru Anda untuk memulihkan akses akun.
+        </p>
+        
+        <Suspense fallback={<p className="text-center text-gray-500">Loading...</p>}>
           <ResetPasswordForm />
         </Suspense>
-        <div className="mt-5 text-center">
-          <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            Batal & Kembali ke Login
+
+        <div className="mt-6 border-t border-gray-100 pt-5 text-center dark:border-gray-800">
+          <Link href="/signin" className="text-sm font-medium text-gray-500 hover:text-brand-500 transition-colors">
+            ← Kembali ke Halaman Sign In
           </Link>
         </div>
       </div>

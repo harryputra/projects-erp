@@ -60,7 +60,8 @@ const othersItems: NavItem[] = [
     name: "Merchant",
     subItems: [
       { name: "Create Merchant", path: "/create-merchant" },
-      { name: "Select Merchant", path: "/select-merchant" },
+      // MODIFIKASI: Tambahkan ?from=dashboard di sini
+      { name: "Select Merchant", path: "/select-merchant?from=dashboard" },
     ],
   },
   {
@@ -88,12 +89,16 @@ const AppSidebar: React.FC = () => {
 
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  // MODIFIKASI: Agar menu tetap "active" meskipun ada query parameter (?from=dashboard)
+  const isActive = useCallback((path: string) => {
+    const purePath = path.split('?')[0];
+    return purePath === pathname;
+  }, [pathname]);
 
   const isParentActive = useCallback(
     (subItems?: { name: string; path: string }[]) => {
       if (!subItems) return false;
-      return subItems.some((item) => pathname === item.path);
+      return subItems.some((item) => pathname === item.path.split('?')[0]);
     },
     [pathname]
   );
@@ -211,30 +216,6 @@ const AppSidebar: React.FC = () => {
                         }`}
                       >
                         {subItem.name}
-                        <span className="ml-auto flex items-center gap-1">
-                          {subItem.new && (
-                            <span
-                              className={`menu-dropdown-badge ml-auto ${
-                                isActive(subItem.path)
-                                  ? "menu-dropdown-badge-active"
-                                  : "menu-dropdown-badge-inactive"
-                              }`}
-                            >
-                              new
-                            </span>
-                          )}
-                          {subItem.pro && (
-                            <span
-                              className={`menu-dropdown-badge ml-auto ${
-                                isActive(subItem.path)
-                                  ? "menu-dropdown-badge-active"
-                                  : "menu-dropdown-badge-inactive"
-                              }`}
-                            >
-                              pro
-                            </span>
-                          )}
-                        </span>
                       </Link>
                     </li>
                   ))}
@@ -249,7 +230,6 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     let submenuMatched = false;
-
     [
       { type: "main" as const, items: navItems },
       { type: "others" as const, items: othersItems },
@@ -257,21 +237,15 @@ const AppSidebar: React.FC = () => {
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
-            if (pathname === subItem.path) {
-              setOpenSubmenu({
-                type,
-                index,
-              });
+            if (pathname === subItem.path.split('?')[0]) {
+              setOpenSubmenu({ type, index });
               submenuMatched = true;
             }
           });
         }
       });
     });
-
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
+    if (!submenuMatched) setOpenSubmenu(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -289,86 +263,27 @@ const AppSidebar: React.FC = () => {
   return (
     <aside
       className={`fixed left-0 top-0 z-50 mt-16 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:mt-0
-      ${
-        isExpanded || isMobileOpen
-          ? "w-[290px]"
-          : isHovered
-          ? "w-[290px]"
-          : "w-[90px]"
-      }
+      ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
       ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
       lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={`flex py-8 ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
+      <div className={`flex py-8 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
         <Link href="/admin/dashboard">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <Image
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <Image
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
-          )}
+          <Image src="/images/logo/logo.svg" alt="Logo" width={150} height={40} className="dark:hidden" />
+          <Image src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} className="hidden dark:block" />
         </Link>
       </div>
-
-      <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
+      <div className="no-scrollbar flex flex-col overflow-y-auto">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
-              <h2
-                className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "ERP Menu"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
+              <h2 className={`mb-4 flex text-xs uppercase text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>ERP Menu</h2>
               {renderMenuItems(navItems, "main")}
             </div>
-
             <div>
-              <h2
-                className={`mb-4 flex text-xs uppercase leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
+              <h2 className={`mb-4 flex text-xs uppercase text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>Others</h2>
               {renderMenuItems(othersItems, "others")}
             </div>
           </div>

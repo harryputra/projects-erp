@@ -28,8 +28,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
+    // PEMBUNGKUS LUAR (IDENTIK)
     <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10 dark:bg-gray-900">
+      {/* KOTAK PUTIH (IDENTIK) */}
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/5">
+        
         <h1 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
           Forgot Password
         </h1>
@@ -72,9 +75,9 @@ export default function ForgotPasswordPage() {
           </button>
         </form>
 
-        <div className="mt-5 text-center">
-          <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            Kembali ke halaman Login
+        <div className="mt-6 border-t border-gray-100 pt-5 text-center dark:border-gray-800">
+          <Link href="/signin" className="text-sm font-medium text-gray-500 hover:text-brand-500 transition-colors">
+            ← Kembali ke Halaman Sign In
           </Link>
         </div>
       </div>

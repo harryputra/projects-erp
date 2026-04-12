@@ -1,143 +1,91 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { saveActiveMerchant } from "@/lib/auth";
 
-type MeResponse = {
-  success: boolean;
-  data: {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      status: string;
-    };
-    merchants: {
-      merchantUserId: string;
-      merchantId: string;
-      merchantName: string;
-      merchantStatus: string;
-      role: string;
-    }[];
-  };
-};
-
 export default function SelectMerchantPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Deteksi parameter ?from=dashboard
+  const from = searchParams.get("from");
+
+  const [merchants, setMerchants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [userName, setUserName] = useState("");
-  const [merchants, setMerchants] = useState<MeResponse["data"]["merchants"]>([]);
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError("");
+    fetchMerchants();
+  }, []);
 
-        const result = await api.get<MeResponse>("/auth/me");
-        setUserName(result.data.user.name);
-
-        const merchantList = result.data.merchants || [];
-        setMerchants(merchantList);
-
-        if (merchantList.length === 0) {
-          router.push("/create-merchant");
-          return;
-        }
-
-        if (merchantList.length === 1) {
-          saveActiveMerchant({
-            merchantUserId: merchantList[0].merchantUserId,
-            merchantId: merchantList[0].merchantId,
-            merchantName: merchantList[0].merchantName,
-            role: merchantList[0].role,
-          });
-          router.push("/admin/dashboard");
-        }
-      } catch (err: any) {
-        setError(err.message || "Gagal memuat merchant");
-      } finally {
-        setLoading(false);
-      }
+  async function fetchMerchants() {
+    try {
+      const response = await api.get("/auth/me");
+      setMerchants(response.data.merchants || []);
+    } catch (err) {
+      console.error("Gagal mengambil data merchant", err);
+    } finally {
+      setLoading(false);
     }
-
-    loadData();
-  }, [router]);
-
-  function handleSelect(merchant: MeResponse["data"]["merchants"][0]) {
-    saveActiveMerchant({
-      merchantUserId: merchant.merchantUserId,
-      merchantId: merchant.merchantId,
-      merchantName: merchant.merchantName,
-      role: merchant.role,
-    });
-
-    router.push("/admin/dashboard");
   }
 
+  const handleSelect = (merchant: any) => {
+    saveActiveMerchant(merchant);
+    router.push("/admin/dashboard");
+  };
+
+  // MODIFIKASI: Logika Tombol Kembali yang dipaksa
+  const handleBack = () => {
+    if (from === "dashboard") {
+      router.push("/admin/dashboard");
+    } else {
+      router.push("/signin");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white px-4 py-10 dark:bg-gray-900">
-      <div className="mx-auto max-w-4xl">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10 dark:bg-gray-900">
+      <div className="w-full max-w-lg">
         <div className="mb-5">
-          <Link
-            href="/signin"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-brand-500 transition-colors"
           >
-            ← Back
-          </Link>
+            ← Kembali ke {from === "dashboard" ? "Dashboard" : "Sign In"}
+          </button>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/5">
           <div className="mb-6">
-            <h1 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Select Merchant
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Halo {userName || "User"}, pilih merchant yang ingin kamu kelola.
-            </p>
+            <h1 className="mb-2 text-2xl font-bold text-gray-800 dark:text-white">Pilih Merchant</h1>
+            <p className="text-sm text-gray-500">Silakan pilih toko untuk mulai mengelola data.</p>
           </div>
 
-          {loading && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Loading merchant...
-            </p>
-          )}
-
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && merchants.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {merchants.map((merchant) => (
+          <div className="space-y-3">
+            {loading ? (
+              <div className="text-center py-10 text-gray-400">Memuat data...</div>
+            ) : (
+              merchants.map((item: any) => (
                 <button
-                  key={merchant.merchantUserId}
-                  onClick={() => handleSelect(merchant)}
-                  className="rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-theme-xs transition hover:border-brand-500 hover:shadow-md dark:border-gray-800 dark:bg-white/5"
+                  key={item.merchantId}
+                  onClick={() => handleSelect(item)}
+                  className="group flex w-full items-center justify-between rounded-xl border border-gray-200 p-4 transition-all hover:border-brand-500 hover:bg-brand-50/30 dark:border-gray-700"
                 >
-                  <div className="mb-2 text-lg font-semibold text-gray-800 dark:text-white/90">
-                    {merchant.merchantName}
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800 dark:text-white group-hover:text-brand-600">
+                      {item.merchantName}
+                    </p>
+                    <p className="text-[10px] uppercase text-gray-500 tracking-wider">{item.role}</p>
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Role: {merchant.role}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Status: {merchant.merchantStatus}
-                  </div>
-
-                  <div className="mt-4 inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-600 dark:bg-brand-500/10 dark:text-brand-300">
-                    Masuk Merchant
+                  <div className="text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                    Pilih →
                   </div>
                 </button>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

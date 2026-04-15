@@ -74,10 +74,11 @@ Beberapa model utama dalam database:
 - **Role-Based Access**: Dioptimalkan untuk role `Owner` dan `Kasir` untuk membatasi fitur-fitur kritikal.
 
 ## Inventory & Distribution Module
-- **Tracking & Allocation**: Pemisahan `actualQuantity` (Stok Fisik) dan `reservedQuantity` (Stok yang sudah dialokasikan untuk dikirim).
+- **Data Table Layout (Professional Design)**: Perubahan *list-view* kardus menjadi Data Table modern dengan pemisahan *Product Info*, *Pricing*, dan visualisasi hirarki Stok.
+- **Tracking & Allocation**: Pemisahan visual indikator `actualQuantity` (Stok Fisik) dan `reservedQuantity` (Stok yang dialokasikan) secara *real-time*. Action "Adjust" tertata di dalam *Expandable Auto-row* sehingga tidak menutup visibilitas layar utama (melampaui UX Modal).
 - **Stock Mutations Audit Trail**: Setiap perubahan stok wajib dicatat ke `StockMutation` untuk akuntabilitas.
 - **Transfer Request Workflow (Pusat <-> Cabang)**: Mengakomodasi `TransferRequest` multi-step lifecycle (`pending` -> `approved` -> `shipped` -> `received`).
-- **Stock Threshold Monitoring**: Indikator otomatis merah jika kuantitas di bawah reorder point.
+- **Stock Threshold Monitoring**: Indikator *badges* status otomasi ("Safe" vs "Low Stock") berdasar parameter `reorderPoint`.
 - **Toggle Active/Inactive**: Kontrol visibilitas master data untuk seasonality.
 
 ## Testing & Verification

@@ -49,6 +49,28 @@ export default function SalesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Hydrate cart from local storage on mount
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem("pos_cart");
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    } catch (e) {
+      console.error("Gagal melakukan load cart data dari storage", e);
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Sync cart to local storage on changes
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem("pos_cart", JSON.stringify(cart));
+    }
+  }, [cart, isHydrated]);
+
   const [activeTab, setActiveTab] = useState<"pos" | "history">("pos");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
